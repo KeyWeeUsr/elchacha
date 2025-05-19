@@ -27,5 +27,20 @@
 
 ;;; Code:
 
+(defconst elchacha-constants
+  (let* ((size 4) (const "expand 32-byte k") (len (length const))
+         chunks result)
+    (dotimes (idx (/ len size))
+      (push (substring const (* idx size) (min len (* (1+ idx) size))) chunks))
+    (setq chunks (reverse chunks))
+    (dolist (chunk chunks)
+      (push (string-to-number
+             (apply 'concat (mapcar (lambda (x) (format "%x" x))
+                                    (reverse (string-to-list chunk))))
+             16)
+            result))
+    (apply 'vector (reverse result)))
+  "ChaCha20 32-bit constants.")
+
 (provide 'elchacha)
 ;;; elchacha.el ends here
