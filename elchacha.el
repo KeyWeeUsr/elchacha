@@ -42,5 +42,13 @@
     (apply 'vector (reverse result)))
   "ChaCha20 32-bit constants.")
 
+(defun elchacha-rotate (v n &optional size)
+  "Left (N>0) or right (N<0) rotate the *unsigned* SIZE-bit value V N-times."
+  (unless size (setq size 32))
+  (let ((n (mod (+ n size) size)))
+    (if (= n 0) v
+      (logand (logior (ash v n) (ash v (* -1 (- size n))))
+              (1- (expt 2 size))))))
+
 (provide 'elchacha)
 ;;; elchacha.el ends here
