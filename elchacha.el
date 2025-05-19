@@ -67,5 +67,16 @@
           b (elchacha-rotate b 7))
     (vector a b c d)))
 
+(defun elchacha-quarter-round-on (state &rest positions)
+  "Perform a quarter-round on the chacha20 state."
+  (let* ((a (aref state (nth 0 positions)))
+         (b (aref state (nth 1 positions)))
+         (c (aref state (nth 2 positions)))
+         (d (aref state (nth 3 positions)))
+         (tmp (elchacha-quarter-round a b c d)))
+    (dotimes (idx 4)
+      (aset state (nth idx positions) (aref tmp idx)))
+    state))
+
 (provide 'elchacha)
 ;;; elchacha.el ends here

@@ -45,5 +45,16 @@
     (should (equal (elchacha-quarter-round input-a input-b input-c input-d)
                    (vector output-a output-b output-c output-d)))))
 
+(ert-deftest chacha20-quarter-round-on-state ()
+  (let ((state [#x879531E0 #xC5ECF37D #x516461B1 #xC9A62F8A
+                #x44C20EF3 #x3390AF7F #xD9FC690B #x2A5F714C
+                #x53372767 #xB00A5631 #x974C541A #x359E9963
+                #x5C971061 #x3D631689 #x2098D9D6 #x91DBD320]))
+    (should (equal (elchacha-quarter-round-on state 2 7 8 13)
+                   [#x879531E0 #xC5ECF37D #xBDB886DC #xC9A62F8A
+                    #x44C20EF3 #x3390AF7F #xD9FC690B #xCFACAFD2
+                    #xE46BEA80 #xB00A5631 #x974C541A #x359E9963
+                    #x5C971061 #xCCC07C79 #x2098D9D6 #x91DBD320]))))
+
 (provide 'elchacha-tests)
 ;;; elchacha-tests.el ends here
