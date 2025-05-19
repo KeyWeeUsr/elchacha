@@ -69,5 +69,19 @@
                     #x13121110 #x17161514 #x1B1A1918 #x1F1E1D1C
                     #x00000001 #x09000000 #x4A000000 #x00000000]))))
 
+(ert-deftest elchacha-block ()
+  (let* ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
+               #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
+               #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
+               #x18 #x19 #x1a #x1b #x1c #x1d #x1e #x1f])
+         (nonce [#x00 #x00 #x00 #x09 #x00 #x00 #x00 #x4a #x00 #x00 #x00 #x00])
+         (block-count 1)
+         (init-state (elchacha-state-init key nonce block-count)))
+    (should (equal (elchacha-block init-state key nonce block-count)
+                   [#x837778AB #xE238D763 #xA67AE21E #x5950BB2F
+                    #xC4F2D0C7 #xFC62BB2F #x8FA018FC #x3F5EC7B7
+                    #x335271C2 #xF29489F3 #xEABDA8FC #x82E46EBD
+                    #xD19C12B4 #xB04E16DE #x9E83D0CB #x4E3C50A2]))))
+
 (provide 'elchacha-tests)
 ;;; elchacha-tests.el ends here

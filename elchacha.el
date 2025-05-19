@@ -27,6 +27,7 @@
 
 ;;; Code:
 
+(defconst elchacha-rounds 20)
 (defconst elchacha-constants
   (let* ((size 4) (const "expand 32-byte k") (len (length const))
          chunks result)
@@ -102,6 +103,24 @@
       (dotimes (idx (/ (length nonce) nonce-chunk-size))
         (aset state (+ 13 idx)
               (elchacha-read-int32-ul nonce (* nonce-chunk-size idx)))))
+    state))
+
+(defun elchacha-inner-block (state)
+  (elchacha-quarter-round-on state 00 04 08 12)
+  (elchacha-quarter-round-on state 01 05 09 13)
+  (elchacha-quarter-round-on state 02 06 10 14)
+  (elchacha-quarter-round-on state 03 07 11 15)
+  (elchacha-quarter-round-on state 00 05 10 15)
+  (elchacha-quarter-round-on state 01 06 11 12)
+  (elchacha-quarter-round-on state 02 07 08 13)
+  (elchacha-quarter-round-on state 03 04 09 14)
+  state)
+
+(defun elchacha-block (init-state key nonce &optional block-counter)
+  "Compute ChaCha20 block with KEY, NONCE and BLOCK-COUNTER."
+  (let ((state (vconcat init-state)))
+    (dotimes (_ (/ elchacha-rounds 2))
+      (setq state (elchacha-inner-block state)))
     state))
 
 (provide 'elchacha)
