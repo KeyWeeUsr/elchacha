@@ -37,5 +37,13 @@
                        (format-bin (elchacha-rotate (plist-get case :v)
                                                     (plist-get case :n))))))))
 
+(ert-deftest elchacha-quarter-round-test-vector ()
+  (let ((input-a #x11111111) (input-b #x01020304)
+        (input-c #x9B8D6F43) (input-d #x01234567)
+        (output-a #xEA2A92F4) (output-b #xCB1CF8CE)
+        (output-c #x4581472E) (output-d #x5881C4BB))
+    (should (equal (elchacha-quarter-round input-a input-b input-c input-d)
+                   (vector output-a output-b output-c output-d)))))
+
 (provide 'elchacha-tests)
 ;;; elchacha-tests.el ends here

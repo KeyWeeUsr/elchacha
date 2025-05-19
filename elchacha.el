@@ -50,5 +50,22 @@
       (logand (logior (ash v n) (ash v (* -1 (- size n))))
               (1- (expt 2 size))))))
 
+(defun elchacha-quarter-round (a b c d)
+  "Perform a quarter-round operation on four numbers."
+  (let ((bound (expt 2 32)))
+    (setq a (mod (+ a b) bound)
+          d (logxor d a)
+          d (elchacha-rotate d 16)
+          c (mod (+ c d) bound)
+          b (logxor b c)
+          b (elchacha-rotate b 12)
+          a (mod (+ a b) bound)
+          d (logxor d a)
+          d (elchacha-rotate d 8)
+          c (mod (+ c d) bound)
+          b (logxor b c)
+          b (elchacha-rotate b 7))
+    (vector a b c d)))
+
 (provide 'elchacha)
 ;;; elchacha.el ends here
