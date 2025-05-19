@@ -78,5 +78,31 @@
       (aset state (nth idx positions) (aref tmp idx)))
     state))
 
+(defun elchacha-read-int32-ul (data &optional offset)
+  "Read an unsigned 32-bit integer from DATA at OFFSET."
+  (let ((offset (or offset 0)))
+    (+ (lsh (aref data offset) 0)
+       (lsh (aref data (1+ offset)) 8)
+       (lsh (aref data (+ 2 offset)) 16)
+       (lsh (aref data (+ 3 offset)) 24))))
+
+(defun elchacha-state-init (key nonce &optional block-count)
+  "Initialize cipher state - the matrix."
+  (unless block-count (setq block-count 0))
+  ;; 32-bit
+  (let ((state (make-vector 16 0)))
+    (dotimes (idx (length elchacha-constants))
+      (aset state (+ 0 idx) (aref elchacha-constants idx)))
+    (let ((key-chunk-size 4))
+      (dotimes (idx (/ (length key) key-chunk-size))
+        (aset state (+ 4 idx)
+              (elchacha-read-int32-ul key (* key-chunk-size idx)))))
+    (aset state 12 block-count)
+    (let ((nonce-chunk-size 4))
+      (dotimes (idx (/ (length nonce) nonce-chunk-size))
+        (aset state (+ 13 idx)
+              (elchacha-read-int32-ul nonce (* nonce-chunk-size idx)))))
+    state))
+
 (provide 'elchacha)
 ;;; elchacha.el ends here
