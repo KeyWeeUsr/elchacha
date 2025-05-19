@@ -1,4 +1,4 @@
-;;; elchacha-tests.el -- tests for Elchacha
+;;; elchacha-tests.el --- tests for Elchacha -*- lexical-binding: t; -*-
 
 ;;; Code:
 
