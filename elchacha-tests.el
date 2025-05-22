@@ -105,5 +105,24 @@
                     #x466482D2 #x09AA9F07 #x05D7C214 #xA2028BD9
                     #xD19C12B5 #xB94E16DE #xE883D0CB #x4E3C50A2]))))
 
+(ert-deftest elchacha-block-sum-serialized ()
+  "ChaCha state serialized for XORing, rfc7539#section-2.3.2"
+  (let* ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
+               #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
+               #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
+               #x18 #x19 #x1a #x1b #x1c #x1d #x1e #x1f])
+         (nonce [#x00 #x00 #x00 #x09 #x00 #x00 #x00 #x4a #x00 #x00 #x00 #x00])
+         (block-count 1)
+         (init-state (elchacha-state-init key nonce block-count)))
+    (should (equal (elchacha-block-stream key nonce block-count)
+                   [#x10 #xf1 #xe7 #xe4 #xd1 #x3b #x59 #x15
+                    #x50 #x0f #xdd #x1f #xa3 #x20 #x71 #xc4
+                    #xc7 #xd1 #xf4 #xc7 #x33 #xc0 #x68 #x03
+                    #x04 #x22 #xaa #x9a #xc3 #xd4 #x6c #x4e
+                    #xd2 #x82 #x64 #x46 #x07 #x9f #xaa #x09
+                    #x14 #xc2 #xd7 #x05 #xd9 #x8b #x02 #xa2
+                    #xb5 #x12 #x9c #xd1 #xde #x16 #x4e #xb9
+                    #xcb #xd0 #x83 #xe8 #xa2 #x50 #x3c #x4e]))))
+
 (provide 'elchacha-tests)
 ;;; elchacha-tests.el ends here

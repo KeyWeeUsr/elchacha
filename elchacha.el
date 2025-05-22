@@ -133,5 +133,31 @@
       (aset state idx (mod (+ (aref init-state idx) (aref state idx)) bound)))
     state))
 
+(defun elchacha-write-int32-ul (number &optional endian)
+  "Write an unsigned 32-bit integer and return LE vector."
+  (unless endian
+    (setq endian 'little))
+  (let ((bytes (make-vector (/ 32 8) 0)))
+    (cond ((eq endian 'little)
+           (setf (aref bytes 0) (logand number #xFF))
+           (setf (aref bytes 1) (logand (ash number -8) #xFF))
+           (setf (aref bytes 2) (logand (ash number -16) #xFF))
+           (setf (aref bytes 3) (logand (ash number -24) #xFF))
+           bytes)
+          ((eq endian 'big)
+           (setf (aref bytes 0) (logand (ash number -24) #xFF))
+           (setf (aref bytes 1) (logand (ash number -16) #xFF))
+           (setf (aref bytes 2) (logand (ash number -8) #xFF))
+           (setf (aref bytes 3) (logand number #xFF)))
+          (t (error "Unexpected endian value! ('little, 'big)")))))
+
+(defun elchacha-block-stream (key nonce &optional block-counter)
+  (let ((block (elchacha-block-sum key nonce block-counter))
+        stream)
+    (dotimes (idx (length block))
+      (setq stream (vconcat stream (elchacha-write-int32-ul
+                                    (aref block idx)))))
+    stream))
+
 (provide 'elchacha)
 ;;; elchacha.el ends here
