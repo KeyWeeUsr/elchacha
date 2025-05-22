@@ -100,6 +100,10 @@
       (dotimes (idx (/ (length key) key-chunk-size))
         (aset state (+ 4 idx)
               (elchacha-read-int32-ul key (* key-chunk-size idx)))))
+    ;; TODO: possible little endian conversion?
+    ;; (let ((counter (elchacha-write-int32-ul block-count)))
+    ;;   (dotimes (idx (length counter))
+    ;;     (aset state (+ 12 idx) (aref counter idx))))
     (aset state 12 block-count)
     (let ((nonce-chunk-size 4))
       (dotimes (idx (/ (length nonce) nonce-chunk-size))
@@ -158,6 +162,69 @@
       (setq stream (vconcat stream (elchacha-write-int32-ul
                                     (aref block idx)))))
     stream))
+
+(defun elchacha-encrypt-decrypt (key nonce data &optional block-counter)
+  (unless key (error "Bad key"))
+  (unless nonce (error "Bad nonce"))
+  (unless data (error "Bad data"))
+  (unless block-counter (setq block-counter 0))
+
+  (unless (= (length key) (/ 256 8))
+    (error "Bad key length, should be 256-bit"))
+
+  ;; TODO: Implement me
+  (when (= (length nonce) (/ 64 8))
+    (error "ChaCha20 for 64-bit nonce not implemented."))
+  (when (= (length nonce) (/ 192 8))
+    (error "ChaCha20 for 192-bit nonce not implemented."))
+
+  (unless (= (length nonce) (/ 96 8))
+    (error "Bad nonce length, should be 96-bit"))
+
+  (when (or (> block-counter (1- (expt 2 32)))
+            (< block-counter 0))
+    (error "Bad block counter length, should be 32-bit"))
+
+  (when (stringp data)
+    (setq data (string-to-vector data)))
+
+  (let* ((block-size 64)
+         (data-len (length data))
+         encrypted
+         (total-blocks (floor (/ data-len (float block-size)))))
+    (dotimes (idx total-blocks)
+      (let ((key-stream (elchacha-block-stream key nonce (+ block-counter idx)))
+            (block (make-vector block-size 0)))
+        (let* ((start (* idx 64))
+               (end (* (1+ idx) 64))
+               (result (make-vector block-size 0)))
+          (dotimes (bidx block-size)
+            (aset result bidx (aref data (+ start bidx))))
+          (setq block result))
+
+        (let ((tmp (make-vector block-size 0)))
+          (dotimes (tmp-idx block-size tmp)
+            (setf (aref tmp tmp-idx)
+                  (logand (logxor (aref block tmp-idx)
+                                  (aref key-stream tmp-idx))
+                          #xFF)))
+          (setq encrypted (vconcat encrypted tmp)))))
+
+    (unless (= (mod data-len block-size) 0)
+      (let* ((idx total-blocks)
+             (key-stream (elchacha-block-stream key nonce (+ block-counter idx)))
+             (block (make-vector (- data-len (* idx block-size)) 0)))
+        (let* ((start (* idx block-size))
+               (end data-len))
+          (dotimes (bidx (- end start))
+            (aset block bidx (aref data (+ start bidx)))))
+        (let ((tmp (make-vector (length block) 0)))
+          (dotimes (bidx (length block))
+            (aset tmp bidx (logand (logxor (aref block bidx)
+                                           (aref key-stream bidx))
+                                  #xFF)))
+          (setq encrypted (vconcat encrypted tmp)))))
+    encrypted))
 
 (provide 'elchacha)
 ;;; elchacha.el ends here

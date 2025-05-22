@@ -124,5 +124,51 @@
                     #xb5 #x12 #x9c #xd1 #xde #x16 #x4e #xb9
                     #xcb #xd0 #x83 #xe8 #xa2 #x50 #x3c #x4e]))))
 
+(ert-deftest elchacha-encrypt-decrypt-from-rfc ()
+  "https://www.rfc-editor.org/rfc/rfc7539#section-2.4.2"
+  (let* ((msg-bytes [#x4c #x61 #x64 #x69 #x65 #x73 #x20 #x61
+                     #x6e #x64 #x20 #x47 #x65 #x6e #x74 #x6c
+                     #x65 #x6d #x65 #x6e #x20 #x6f #x66 #x20
+                     #x74 #x68 #x65 #x20 #x63 #x6c #x61 #x73
+                     #x73 #x20 #x6f #x66 #x20 #x27 #x39 #x39
+                     #x3a #x20 #x49 #x66 #x20 #x49 #x20 #x63
+                     #x6f #x75 #x6c #x64 #x20 #x6f #x66 #x66
+                     #x65 #x72 #x20 #x79 #x6f #x75 #x20 #x6f
+                     #x6e #x6c #x79 #x20 #x6f #x6e #x65 #x20
+                     #x74 #x69 #x70 #x20 #x66 #x6f #x72 #x20
+                     #x74 #x68 #x65 #x20 #x66 #x75 #x74 #x75
+                     #x72 #x65 #x2c #x20 #x73 #x75 #x6e #x73
+                     #x63 #x72 #x65 #x65 #x6e #x20 #x77 #x6f
+                     #x75 #x6c #x64 #x20 #x62 #x65 #x20 #x69
+                     #x74 #x2e])
+         (key-bytes [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
+                     #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
+                     #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
+                     #x18 #x19 #x1a #x1b #x1c #x1d #x1e #x1f])
+         (nonce-bytes [#x00 #x00 #x00 #x00 #x00 #x00
+                       #x00 #x4a #x00 #x00 #x00 #x00])
+         (counter 1)
+         (output [#x6e #x2e #x35 #x9a #x25 #x68 #xf9 #x80
+                  #x41 #xba #x07 #x28 #xdd #x0d #x69 #x81
+                  #xe9 #x7e #x7a #xec #x1d #x43 #x60 #xc2
+                  #x0a #x27 #xaf #xcc #xfd #x9f #xae #x0b
+                  #xf9 #x1b #x65 #xc5 #x52 #x47 #x33 #xab
+                  #x8f #x59 #x3d #xab #xcd #x62 #xb3 #x57
+                  #x16 #x39 #xd6 #x24 #xe6 #x51 #x52 #xab
+                  #x8f #x53 #x0c #x35 #x9f #x08 #x61 #xd8
+                  #x07 #xca #x0d #xbf #x50 #x0d #x6a #x61
+                  #x56 #xa3 #x8e #x08 #x8a #x22 #xb6 #x5e
+                  #x52 #xbc #x51 #x4d #x16 #xcc #xf8 #x06
+                  #x81 #x8c #xe9 #x1a #xb7 #x79 #x37 #x36
+                  #x5a #xf9 #x0b #xbf #x74 #xa3 #x5b #xe6
+                  #xb4 #x0b #x8e #xed #xf2 #x78 #x5e #x42
+                  #x87 #x4d])
+         (encrypted
+          (elchacha-encrypt-decrypt key-bytes nonce-bytes msg-bytes counter))
+         (decrypted
+          (elchacha-encrypt-decrypt key-bytes nonce-bytes encrypted counter)))
+    (should (equal encrypted output))
+    (should (equal decrypted msg-bytes))))
+
 (provide 'elchacha-tests)
 ;;; elchacha-tests.el ends here
