@@ -1,5 +1,7 @@
 ;;; elchacha-tests.el --- tests for Elchacha -*- lexical-binding: t; -*-
 
+;;; Commentary: Implementation as per RFC7539.
+
 ;;; Code:
 
 (require 'ert)
@@ -7,6 +9,7 @@
 (setq ert-quiet t)
 
 (ert-deftest elchacha-constants-expand ()
+  "https://www.rfc-editor.org/rfc/rfc7539#section-2.3"
   (should (equal [#x61707865 #x3320646e #x79622d32 #x6b206574]
                  elchacha-constants)))
 
@@ -20,6 +23,7 @@
     res))
 
 (ert-deftest elchacha-rotl ()
+  "Bit rotation (<<<=)."
   (let ((matrix `((:v #x12345678 :n #x00 :result #x12345678)
                   (:v #x12345678 :n #x20 :result #x12345678)
                   (:v #x12345678 :n #x40 :result #x12345678)
@@ -38,6 +42,7 @@
                                                     (plist-get case :n))))))))
 
 (ert-deftest elchacha-quarter-round-test-vector ()
+  "https://www.rfc-editor.org/rfc/rfc7539#section-2.1.1"
   (let ((input-a #x11111111) (input-b #x01020304)
         (input-c #x9B8D6F43) (input-d #x01234567)
         (output-a #xEA2A92F4) (output-b #xCB1CF8CE)
@@ -45,7 +50,8 @@
     (should (equal (elchacha-quarter-round input-a input-b input-c input-d)
                    (vector output-a output-b output-c output-d)))))
 
-(ert-deftest chacha20-quarter-round-on-state ()
+(ert-deftest elchacha-quarter-round-on-state ()
+  "https://www.rfc-editor.org/rfc/rfc7539#section-2.2.1"
   (let ((state [#x879531E0 #xC5ECF37D #x516461B1 #xC9A62F8A
                 #x44C20EF3 #x3390AF7F #xD9FC690B #x2A5F714C
                 #x53372767 #xB00A5631 #x974C541A #x359E9963
@@ -57,6 +63,7 @@
                     #x5C971061 #xCCC07C79 #x2098D9D6 #x91DBD320]))))
 
 (ert-deftest elchacha-state ()
+  "ChaCha state with the key setup, rfc7539#section-2.3.2"
   (let ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
               #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
               #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
@@ -70,6 +77,7 @@
                     #x00000001 #x09000000 #x4A000000 #x00000000]))))
 
 (ert-deftest elchacha-block ()
+  "ChaCha state after 20 rounds, rfc7539#section-2.3.2"
   (let* ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
                #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
@@ -84,6 +92,7 @@
                     #xD19C12B4 #xB04E16DE #x9E83D0CB #x4E3C50A2]))))
 
 (ert-deftest elchacha-block-sum ()
+  "ChaCha state at the end of the ChaCha20 operation, rfc7539#section-2.3.2"
   (let* ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
                #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17

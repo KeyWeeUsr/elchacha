@@ -21,13 +21,15 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Commentary:
+;;; Commentary: Implementation as per RFC7539.
 
 ;; TBD
 
 ;;; Code:
 
-(defconst elchacha-rounds 20)
+(defconst elchacha-rounds 20
+  "https://www.rfc-editor.org/rfc/rfc7539#section-1.1")
+
 (defconst elchacha-constants
   (let* ((size 4) (const "expand 32-byte k") (len (length const))
          chunks result)
