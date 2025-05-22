@@ -21,14 +21,23 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Commentary: Implementation as per RFC7539.
+;;; Commentary:
 
-;; TBD
+;; This library is a partial implementation of ChaCha20 stream cipher as per
+;; RFC7539. The implementation hasn't been tested against any attacks and
+;; shouldn't be used as the first choice when using a cryptographic
+;; library.
+;;
+;; The use-case I wrote this library for is a very limited one.  It's intended
+;; for a personal use for platforms where using libraries such as OpenSSL is
+;; inefficient, impractical or would simply require too much effort and baggage
+;; involved for what it's simply supposed to do -- xor some things in a
+;; particular way.
 
 ;;; Code:
 
 (defconst elchacha-rounds 20
-  "https://www.rfc-editor.org/rfc/rfc7539#section-1.1")
+  "Ref: https://www.rfc-editor.org/rfc/rfc7539#section-1.1 .")
 
 (defconst elchacha-constants
   (let* ((size 4) (const "expand 32-byte k") (len (length const))
@@ -54,7 +63,7 @@
               (1- (expt 2 size))))))
 
 (defun elchacha-quarter-round (a b c d)
-  "Perform a quarter-round operation on four numbers."
+  "Perform a quarter-round operation on four numbers (A, B, C, D)."
   (let ((bound (expt 2 32)))
     (setq a (mod (+ a b) bound)
           d (logand (logxor d a) #xFFFFFFFF)
@@ -71,15 +80,14 @@
     (vector a b c d)))
 
 (defun elchacha-quarter-round-on (state &rest positions)
-  "Perform a quarter-round on the chacha20 state."
+  "Perform a quarter-round on the ChaCha20 STATE on nth POSITIONS (4)."
   (let* ((a (aref state (nth 0 positions)))
          (b (aref state (nth 1 positions)))
          (c (aref state (nth 2 positions)))
          (d (aref state (nth 3 positions)))
          (tmp (elchacha-quarter-round a b c d)))
-    (dotimes (idx 4)
-      (aset state (nth idx positions) (aref tmp idx)))
-    state))
+    (dotimes (idx 4 state)
+      (aset state (nth idx positions) (aref tmp idx)))))
 
 (defun elchacha-read-int32-ul (data &optional offset)
   "Read an unsigned 32-bit integer from DATA at OFFSET."
@@ -89,9 +97,10 @@
        (lsh (aref data (+ 2 offset)) 16)
        (lsh (aref data (+ 3 offset)) 24))))
 
-(defun elchacha-state-init (key nonce &optional block-count)
-  "Initialize cipher state - the matrix."
-  (unless block-count (setq block-count 0))
+(defun elchacha-state-init (key nonce &optional block-counter)
+  "Initialize cipher state - the matrix - with KEY and NONCE.
+Optional argument BLOCK-COUNTER defaults to 0."
+  (unless block-counter (setq block-counter 0))
   ;; 32-bit
   (let ((state (make-vector 16 0)))
     (dotimes (idx (length elchacha-constants))
@@ -101,44 +110,50 @@
         (aset state (+ 4 idx)
               (elchacha-read-int32-ul key (* key-chunk-size idx)))))
     ;; TODO: possible little endian conversion?
-    ;; (let ((counter (elchacha-write-int32-ul block-count)))
+    ;; (let ((counter (elchacha-write-int32-ul block-counter)))
     ;;   (dotimes (idx (length counter))
     ;;     (aset state (+ 12 idx) (aref counter idx))))
-    (aset state 12 block-count)
+    (aset state 12 block-counter)
     (let ((nonce-chunk-size 4))
-      (dotimes (idx (/ (length nonce) nonce-chunk-size))
+      (dotimes (idx (/ (length nonce) nonce-chunk-size) state)
         (aset state (+ 13 idx)
-              (elchacha-read-int32-ul nonce (* nonce-chunk-size idx)))))
-    state))
+              (elchacha-read-int32-ul nonce (* nonce-chunk-size idx)))))))
 
 (defun elchacha-inner-block (state)
+  "Calculate column+diagonal quarter rounds on STATE.
+Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.1"
+  ;; column round
   (elchacha-quarter-round-on state 00 04 08 12)
   (elchacha-quarter-round-on state 01 05 09 13)
   (elchacha-quarter-round-on state 02 06 10 14)
   (elchacha-quarter-round-on state 03 07 11 15)
+  ;; diagonal round
   (elchacha-quarter-round-on state 00 05 10 15)
   (elchacha-quarter-round-on state 01 06 11 12)
   (elchacha-quarter-round-on state 02 07 08 13)
   (elchacha-quarter-round-on state 03 04 09 14)
   state)
 
-(defun elchacha-block (init-state key nonce &optional block-counter)
-  "Compute ChaCha20 block with KEY, NONCE and BLOCK-COUNTER."
+(defun elchacha-block (init-state)
+  "Calculate ChaCha20 state after 20 rounds on INIT-STATE."
   (let ((state (vconcat init-state)))
-    (dotimes (_ (/ elchacha-rounds 2))
-      (setq state (elchacha-inner-block state)))
-    state))
+    (dotimes (_ (/ elchacha-rounds 2) state)
+      (setq state (elchacha-inner-block state)))))
 
 (defun elchacha-block-sum (key nonce &optional block-counter)
+  "Calculate ChaCha20 operation to the end with KEY and NONCE.
+Optional argument BLOCK-COUNTER defaults to 0
+Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.2 ."
   (let* ((init-state (elchacha-state-init key nonce block-counter))
-         (state (elchacha-block init-state key nonce block-counter))
+         (state (elchacha-block init-state))
          (bound (expt 2 32)))
-    (dotimes (idx (length init-state))
-      (aset state idx (mod (+ (aref init-state idx) (aref state idx)) bound)))
-    state))
+    (dotimes (idx (length init-state) state)
+      (aset state idx
+            (mod (+ (aref init-state idx) (aref state idx)) bound)))))
 
 (defun elchacha-write-int32-ul (number &optional endian)
-  "Write an unsigned 32-bit integer and return LE vector."
+  "Write an unsigned 32-bit integer from NUMBER and return LE vector.
+Optional argument ENDIAN: 'big | 'little"
   (unless endian
     (setq endian 'little))
   (let ((bytes (make-vector (/ 32 8) 0)))
@@ -156,14 +171,17 @@
           (t (error "Unexpected endian value! ('little, 'big)")))))
 
 (defun elchacha-block-stream (key nonce &optional block-counter)
+  "Serialize ChaCha20 block calculated with KEY and NONCE into byte stream.
+Optional argument BLOCK-COUNTER defaults to 0
+Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.2"
   (let ((block (elchacha-block-sum key nonce block-counter))
         stream)
-    (dotimes (idx (length block))
+    (dotimes (idx (length block) stream)
       (setq stream (vconcat stream (elchacha-write-int32-ul
-                                    (aref block idx)))))
-    stream))
+                                    (aref block idx)))))))
 
 (defun elchacha-encrypt-decrypt (key nonce data &optional block-counter)
+  "Encrypt/decrypt DATA with KEY, NONCE and optional BLOCK-COUNTER (0)."
   (unless key (error "Bad key"))
   (unless nonce (error "Bad nonce"))
   (unless data (error "Bad data"))
@@ -174,9 +192,9 @@
 
   ;; TODO: Implement me
   (when (= (length nonce) (/ 64 8))
-    (error "ChaCha20 for 64-bit nonce not implemented."))
+    (error "ChaCha20 for 64-bit nonce not implemented"))
   (when (= (length nonce) (/ 192 8))
-    (error "ChaCha20 for 192-bit nonce not implemented."))
+    (error "ChaCha20 for 192-bit nonce not implemented"))
 
   (unless (= (length nonce) (/ 96 8))
     (error "Bad nonce length, should be 96-bit"))
@@ -193,7 +211,8 @@
          encrypted
          (total-blocks (floor (/ data-len (float block-size)))))
     (dotimes (idx total-blocks)
-      (let ((key-stream (elchacha-block-stream key nonce (+ block-counter idx)))
+      (let ((key-stream
+             (elchacha-block-stream key nonce (+ block-counter idx)))
             (block (make-vector block-size 0)))
         (let* ((start (* idx 64))
                (end (* (1+ idx) 64))
@@ -212,7 +231,8 @@
 
     (unless (= (mod data-len block-size) 0)
       (let* ((idx total-blocks)
-             (key-stream (elchacha-block-stream key nonce (+ block-counter idx)))
+             (key-stream
+              (elchacha-block-stream key nonce (+ block-counter idx)))
              (block (make-vector (- data-len (* idx block-size)) 0)))
         (let* ((start (* idx block-size))
                (end data-len))

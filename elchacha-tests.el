@@ -85,7 +85,7 @@
          (nonce [#x00 #x00 #x00 #x09 #x00 #x00 #x00 #x4a #x00 #x00 #x00 #x00])
          (block-count 1)
          (init-state (elchacha-state-init key nonce block-count)))
-    (should (equal (elchacha-block init-state key nonce block-count)
+    (should (equal (elchacha-block init-state)
                    [#x837778AB #xE238D763 #xA67AE21E #x5950BB2F
                     #xC4F2D0C7 #xFC62BB2F #x8FA018FC #x3F5EC7B7
                     #x335271C2 #xF29489F3 #xEABDA8FC #x82E46EBD
