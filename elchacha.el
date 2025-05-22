@@ -4,7 +4,7 @@
 
 ;; Author: Peter Badida <keyweeusr@gmail.com>
 ;; Keywords: convenience, elchacha
-;; Version: 1.0.0
+;; Version: 1.0.1
 ;; Package-Requires: ((emacs "25.1"))
 ;; Homepage: https://github.com/KeyWeeUsr/elchacha
 
@@ -86,16 +86,17 @@
          (c (aref state (nth 2 positions)))
          (d (aref state (nth 3 positions)))
          (tmp (elchacha-quarter-round a b c d)))
-    (dotimes (idx 4 state)
-      (aset state (nth idx positions) (aref tmp idx)))))
+    (dotimes (idx 4)
+      (aset state (nth idx positions) (aref tmp idx)))
+    state))
 
 (defun elchacha-read-int32-ul (data &optional offset)
   "Read an unsigned 32-bit integer from DATA at OFFSET."
   (let ((offset (or offset 0)))
-    (+ (lsh (aref data offset) 0)
-       (lsh (aref data (1+ offset)) 8)
-       (lsh (aref data (+ 2 offset)) 16)
-       (lsh (aref data (+ 3 offset)) 24))))
+    (+ (ash (aref data offset) 0)
+       (ash (aref data (1+ offset)) 8)
+       (ash (aref data (+ 2 offset)) 16)
+       (ash (aref data (+ 3 offset)) 24))))
 
 (defun elchacha-state-init (key nonce &optional block-counter)
   "Initialize cipher state - the matrix - with KEY and NONCE.
@@ -115,9 +116,10 @@ Optional argument BLOCK-COUNTER defaults to 0."
     ;;     (aset state (+ 12 idx) (aref counter idx))))
     (aset state 12 block-counter)
     (let ((nonce-chunk-size 4))
-      (dotimes (idx (/ (length nonce) nonce-chunk-size) state)
+      (dotimes (idx (/ (length nonce) nonce-chunk-size))
         (aset state (+ 13 idx)
-              (elchacha-read-int32-ul nonce (* nonce-chunk-size idx)))))))
+              (elchacha-read-int32-ul nonce (* nonce-chunk-size idx))))
+      state)))
 
 (defun elchacha-inner-block (state)
   "Calculate column+diagonal quarter rounds on STATE.
@@ -147,13 +149,14 @@ Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.2 ."
   (let* ((init-state (elchacha-state-init key nonce block-counter))
          (state (elchacha-block init-state))
          (bound (expt 2 32)))
-    (dotimes (idx (length init-state) state)
+    (dotimes (idx (length init-state))
       (aset state idx
-            (mod (+ (aref init-state idx) (aref state idx)) bound)))))
+            (mod (+ (aref init-state idx) (aref state idx)) bound)))
+    state))
 
 (defun elchacha-write-int32-ul (number &optional endian)
   "Write an unsigned 32-bit integer from NUMBER and return LE vector.
-Optional argument ENDIAN: 'big | 'little"
+Optional argument ENDIAN: \\='big | \\='little"
   (unless endian
     (setq endian 'little))
   (let ((bytes (make-vector (/ 32 8) 0)))
@@ -176,9 +179,10 @@ Optional argument BLOCK-COUNTER defaults to 0
 Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.2"
   (let ((block (elchacha-block-sum key nonce block-counter))
         stream)
-    (dotimes (idx (length block) stream)
+    (dotimes (idx (length block))
       (setq stream (vconcat stream (elchacha-write-int32-ul
-                                    (aref block idx)))))))
+                                    (aref block idx)))))
+    stream))
 
 (defun elchacha-encrypt-decrypt (key nonce data &optional block-counter)
   "Encrypt/decrypt DATA with KEY, NONCE and optional BLOCK-COUNTER (0)."
@@ -215,14 +219,13 @@ Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.2"
              (elchacha-block-stream key nonce (+ block-counter idx)))
             (block (make-vector block-size 0)))
         (let* ((start (* idx 64))
-               (end (* (1+ idx) 64))
                (result (make-vector block-size 0)))
           (dotimes (bidx block-size)
             (aset result bidx (aref data (+ start bidx))))
           (setq block result))
 
         (let ((tmp (make-vector block-size 0)))
-          (dotimes (tmp-idx block-size tmp)
+          (dotimes (tmp-idx block-size)
             (setf (aref tmp tmp-idx)
                   (logand (logxor (aref block tmp-idx)
                                   (aref key-stream tmp-idx))
