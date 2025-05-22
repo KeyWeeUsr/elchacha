@@ -98,9 +98,8 @@
                #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
                #x18 #x19 #x1a #x1b #x1c #x1d #x1e #x1f])
          (nonce [#x00 #x00 #x00 #x09 #x00 #x00 #x00 #x4a #x00 #x00 #x00 #x00])
-         (block-count 1)
-         (init-state (elchacha-state-init key nonce block-count)))
-    (should (equal (elchacha-block-sum init-state key nonce block-count)
+         (block-count 1))
+    (should (equal (elchacha-block-sum key nonce block-count)
                    [#xE4E7F110 #x15593BD1 #x1FDD0F50 #xC47120A3
                     #xC7F4D1C7 #x0368C033 #x9AAA2204 #x4E6CD4C3
                     #x466482D2 #x09AA9F07 #x05D7C214 #xA2028BD9

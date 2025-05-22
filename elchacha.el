@@ -125,7 +125,7 @@
       (setq state (elchacha-inner-block state)))
     state))
 
-(defun elchacha-block-sum (init-state key nonce &optional block-counter)
+(defun elchacha-block-sum (key nonce &optional block-counter)
   (let* ((init-state (elchacha-state-init key nonce block-counter))
          (state (elchacha-block init-state key nonce block-counter))
          (bound (expt 2 32)))
