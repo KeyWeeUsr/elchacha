@@ -170,5 +170,104 @@
     (should (equal encrypted output))
     (should (equal decrypted msg-bytes))))
 
+(defun sha256 (thing)
+  (string-to-vector (secure-hash 'sha256 thing nil nil t)))
+
+(defun sha256file (file)
+  (with-temp-buffer
+    (set-buffer-multibyte nil)
+    (insert-file-contents-literally file)
+    (sha256 (buffer-string))))
+
+(ert-deftest elchacha-local-check ()
+  (unless (getenv "ELCHACHA_PYTHON")
+    (ert-skip "Local check"))
+  (let* ((source "1.0.0")
+         (key "This is a super-secret key, yes.")
+         (nonce "abcdefghijkl")
+         (key-bytes (string-to-vector key))
+         (nonce-bytes (string-to-vector nonce))
+         (tmp-name (make-temp-name "elchacha-"))
+         (pre-check [#xfa #x28 #x0b #x08 #x9d #x34 #x90 #x77
+                     #x3c #x27 #xac #xf8 #x98 #x77 #x5b #x3b
+                     #xf1 #x47 #xf5 #xff #x1c #xd4 #xae #xec
+                     #x9f #x75 #x5b #xef #x8c #x29 #x9b #x3d])
+         (post-check [#x13 #xf8 #x79 #xb2 #x2a #xe1 #x75 #xb2
+                      #xc1 #x6b #x6c #x56 #x1d #x24 #x77 #x5c
+                      #xac #x5a #x38 #x67 #xdf #xa8 #x56 #x3d
+                      #x13 #x94 #xbb #x52 #x60 #x66 #x13 #x21])
+         (post-check-hex (apply 'concat (mapcar (lambda (x) (format "%02x" x))
+                                                post-check)))
+         (tests '(:elchacha :openssl :pycryptodome))
+         (cases `(:elchacha
+                  'noop
+                  :openssl
+                  ,(format "openssl enc -chacha20 -K %s -iv %s -in %s -out %s"
+                           (apply 'concat (mapcar (lambda (x) (format "%0X" x))
+                                                  key-bytes))
+                           (concat "00000000"
+                                   (apply 'concat
+                                          (mapcar (lambda (x) (format "%0X" x))
+                                                  nonce-bytes)))
+                           tmp-name
+                           "-|sha256sum")
+                  :pycryptodome
+                  ,(string-join
+                    `("import Crypto.Cipher.ChaCha20 as C"
+                      "import hashlib as h"
+                      "s=h.sha256"
+                      ,(format (concat "print("
+                                       "s(C.new(key=b'%s', nonce=b'%s')"
+                                       ".encrypt(open('%s', 'rb').read()))"
+                                       ".hexdigest(), end='')")
+                               key nonce tmp-name))
+                    ";")))
+         msg-bytes)
+    (unless (file-exists-p source)
+      (url-copy-file
+       (format "https://github.com/KeyWeeUsr/elchacha/zipball/%s" source)
+       source t))
+    (dolist (test tests)
+      (unwind-protect
+          (progn
+            (copy-file source tmp-name t)
+            (cond ((eq test :elchacha)
+                   (with-temp-buffer
+                     (set-buffer-multibyte nil)
+                     (insert-file-contents-literally tmp-name)
+                     (should (equal (sha256 (buffer-string)) pre-check))
+
+                     (setq msg-bytes (elchacha-encrypt-decrypt
+                                      key-bytes nonce-bytes
+                                      (buffer-string) 0)))
+                   (with-temp-buffer
+                     (set-buffer-multibyte nil)
+                     (dotimes (idx (length msg-bytes))
+                       (insert (aref msg-bytes idx)))
+                     (should (equal (sha256 (buffer-string)) post-check))))
+                  ((eq test :openssl)
+                   (let ((raw (sha256file tmp-name))
+                         (encrypted (shell-command-to-string
+                                     (plist-get cases test))))
+                     (should (equal raw pre-check))
+                     (should (equal (car (split-string encrypted " "))
+                                    post-check-hex))))
+                  ((eq test :pycryptodome)
+                   (with-temp-file (format "%s.py" tmp-name)
+                     (insert (plist-get cases test)))
+                   (let ((raw (sha256file tmp-name))
+                         (encrypted (shell-command-to-string
+                                     (format "%s \"%s.py\""
+                                             (getenv "ELCHACHA_PYTHON")
+                                             tmp-name))))
+                     (should (equal raw pre-check))
+                     (should (equal (car (split-string encrypted " "))
+                                    post-check-hex))))))
+        (when (file-exists-p tmp-name)
+          (delete-file tmp-name))
+        (when (file-exists-p (format "%s.py" tmp-name))
+          (delete-file (format "%s.py" tmp-name)))
+        (setq msg-bytes nil)))))
+
 (provide 'elchacha-tests)
 ;;; elchacha-tests.el ends here
