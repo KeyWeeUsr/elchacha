@@ -110,11 +110,9 @@ Optional argument BLOCK-COUNTER defaults to 0."
       (dotimes (idx (/ (length key) key-chunk-size))
         (aset state (+ 4 idx)
               (elchacha-read-int32-ul key (* key-chunk-size idx)))))
-    ;; TODO: possible little endian conversion?
-    ;; (let ((counter (elchacha-write-int32-ul block-counter)))
-    ;;   (dotimes (idx (length counter))
-    ;;     (aset state (+ 12 idx) (aref counter idx))))
+
     (aset state 12 block-counter)
+
     (let ((nonce-chunk-size 4))
       (dotimes (idx (/ (length nonce) nonce-chunk-size))
         (aset state (+ 13 idx)
