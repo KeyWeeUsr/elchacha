@@ -14,6 +14,14 @@ Clone and install manually, then:
 1. `(require 'elchacha)`
 2. `(elchacha-encrypt-decrypt key nonce data)`
 
+Note that the implementation is obviously slower than with compiled languages
+and, for example, running an `elisp-manual-21-2.8.tar.gz` (2455995 bytes)
+through `elchacha-encrypt-decrypt` took 30s while with OpenSSL or PyCryptodome
+it took under one second.
+
+While there might be performance bottlenecks in the current implementation, if
+you are looking for speed, there are better and safer implementations.
+
 [bmc-badge]: https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee
 [bmc-link]: https://www.buymeacoffee.com/peterbadida
 [ppl-badge]: https://img.shields.io/badge/-paypal-grey?logo=paypal
