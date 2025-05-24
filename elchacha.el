@@ -4,7 +4,7 @@
 
 ;; Author: Peter Badida <keyweeusr@gmail.com>
 ;; Keywords: convenience, elchacha
-;; Version: 1.0.1
+;; Version: 1.0.2
 ;; Package-Requires: ((emacs "25.1"))
 ;; Homepage: https://github.com/KeyWeeUsr/elchacha
 
@@ -212,7 +212,8 @@ Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.2"
 
   (let* ((block-size 64)
          (data-len (length data))
-         encrypted
+         head
+         (encrypted (make-vector data-len 0))
          (total-blocks (floor (/ data-len (float block-size)))))
     (dotimes (idx total-blocks)
       (let ((key-stream
@@ -224,29 +225,25 @@ Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.2"
             (aset result bidx (aref data (+ start bidx))))
           (setq block result))
 
-        (let ((tmp (make-vector block-size 0)))
-          (dotimes (tmp-idx block-size)
-            (setf (aref tmp tmp-idx)
-                  (logand (logxor (aref block tmp-idx)
-                                  (aref key-stream tmp-idx))
-                          #xFF)))
-          (setq encrypted (vconcat encrypted tmp)))))
+        (dotimes (tmp-idx block-size)
+          (unless head (setq head tmp-idx))
+          (setf (aref encrypted head)
+                (logand (logxor (aref block tmp-idx) (aref key-stream tmp-idx))
+                        #xFF))
+          (setq head (1+ head)))))
 
     (unless (= (mod data-len block-size) 0)
-      (let* ((idx total-blocks)
-             (key-stream
-              (elchacha-block-stream key nonce (+ block-counter idx)))
-             (block (make-vector (- data-len (* idx block-size)) 0)))
-        (let* ((start (* idx block-size))
+      (let* ((key-stream
+              (elchacha-block-stream key nonce (+ block-counter total-blocks)))
+             (block (make-vector (- data-len (* total-blocks block-size)) 0)))
+        (let* ((start (* total-blocks block-size))
                (end data-len))
-          (dotimes (bidx (- end start))
-            (aset block bidx (aref data (+ start bidx)))))
-        (let ((tmp (make-vector (length block) 0)))
-          (dotimes (bidx (length block))
-            (aset tmp bidx (logand (logxor (aref block bidx)
-                                           (aref key-stream bidx))
-                                  #xFF)))
-          (setq encrypted (vconcat encrypted tmp)))))
+          (dotimes (idx (- end start))
+            (aset block idx (aref data (+ start idx)))))
+        (dotimes (idx (length block))
+          (aset encrypted head
+                (logand (logxor (aref block idx) (aref key-stream idx)) #xFF))
+          (setq head (1+ head)))))
     encrypted))
 
 (provide 'elchacha)

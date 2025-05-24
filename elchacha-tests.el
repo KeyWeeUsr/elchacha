@@ -9,7 +9,7 @@
 (setq ert-quiet t)
 
 (ert-deftest elchacha-constants-expand ()
-  "https://www.rfc-editor.org/rfc/rfc7539#section-2.3"
+  "Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3 ."
   (should (equal [#x61707865 #x3320646e #x79622d32 #x6b206574]
                  elchacha-constants)))
 
@@ -42,7 +42,7 @@
                                                     (plist-get case :n))))))))
 
 (ert-deftest elchacha-quarter-round-test-vector ()
-  "https://www.rfc-editor.org/rfc/rfc7539#section-2.1.1"
+  "Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.1.1 ."
   (let ((input-a #x11111111) (input-b #x01020304)
         (input-c #x9B8D6F43) (input-d #x01234567)
         (output-a #xEA2A92F4) (output-b #xCB1CF8CE)
@@ -51,7 +51,7 @@
                    (vector output-a output-b output-c output-d)))))
 
 (ert-deftest elchacha-quarter-round-on-state ()
-  "https://www.rfc-editor.org/rfc/rfc7539#section-2.2.1"
+  "Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.2.1 ."
   (let ((state [#x879531E0 #xC5ECF37D #x516461B1 #xC9A62F8A
                 #x44C20EF3 #x3390AF7F #xD9FC690B #x2A5F714C
                 #x53372767 #xB00A5631 #x974C541A #x359E9963
@@ -63,7 +63,7 @@
                     #x5C971061 #xCCC07C79 #x2098D9D6 #x91DBD320]))))
 
 (ert-deftest elchacha-state ()
-  "ChaCha state with the key setup, rfc7539#section-2.3.2"
+  "ChaCha state with the key setup, rfc7539#section-2.3.2 ."
   (let ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
               #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
               #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
@@ -77,7 +77,7 @@
                     #x00000001 #x09000000 #x4A000000 #x00000000]))))
 
 (ert-deftest elchacha-block ()
-  "ChaCha state after 20 rounds, rfc7539#section-2.3.2"
+  "ChaCha state after 20 rounds, rfc7539#section-2.3.2 ."
   (let* ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
                #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
@@ -92,7 +92,7 @@
                     #xD19C12B4 #xB04E16DE #x9E83D0CB #x4E3C50A2]))))
 
 (ert-deftest elchacha-block-sum ()
-  "ChaCha state at the end of the ChaCha20 operation, rfc7539#section-2.3.2"
+  "ChaCha state at the end of the ChaCha20 operation, rfc7539#section-2.3.2 ."
   (let* ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
                #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
@@ -106,7 +106,7 @@
                     #xD19C12B5 #xB94E16DE #xE883D0CB #x4E3C50A2]))))
 
 (ert-deftest elchacha-block-sum-serialized ()
-  "ChaCha state serialized for XORing, rfc7539#section-2.3.2"
+  "ChaCha state serialized for XORing, rfc7539#section-2.3.2 ."
   (let* ((key [#x00 #x01 #x02 #x03 #x04 #x05 #x06 #x07
                #x08 #x09 #x0a #x0b #x0c #x0d #x0e #x0f
                #x10 #x11 #x12 #x13 #x14 #x15 #x16 #x17
@@ -125,7 +125,7 @@
                     #xcb #xd0 #x83 #xe8 #xa2 #x50 #x3c #x4e]))))
 
 (ert-deftest elchacha-encrypt-decrypt-from-rfc ()
-  "https://www.rfc-editor.org/rfc/rfc7539#section-2.4.2"
+  "Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.4.2 ."
   (let* ((msg-bytes [#x4c #x61 #x64 #x69 #x65 #x73 #x20 #x61
                      #x6e #x64 #x20 #x47 #x65 #x6e #x74 #x6c
                      #x65 #x6d #x65 #x6e #x20 #x6f #x66 #x20
