@@ -4,7 +4,7 @@
 
 ;; Author: Peter Badida <keyweeusr@gmail.com>
 ;; Keywords: convenience, elchacha
-;; Version: 1.0.2
+;; Version: 1.0.3
 ;; Package-Requires: ((emacs "25.1"))
 ;; Homepage: https://github.com/KeyWeeUsr/elchacha
 
@@ -239,6 +239,7 @@ Ref: https://www.rfc-editor.org/rfc/rfc7539#section-2.3.2"
           (dotimes (idx (- end start))
             (aset block idx (aref data (+ start idx)))))
         (dotimes (idx (length block))
+          (unless head (setq head idx))
           (aset encrypted head
                 (logand (logxor (aref block idx) (aref key-stream idx)) #xFF))
           (setq head (1+ head)))))

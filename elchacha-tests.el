@@ -269,5 +269,20 @@
           (delete-file (format "%s.py" tmp-name)))
         (setq msg-bytes nil)))))
 
+(ert-deftest elchacha-encrypt-decrypt-without-blocks ()
+  (let ((expected "My_Password")
+        (key [#x8A #xD7 #x07 #x71 #x0A #x9E #xD6 #x1F
+              #x87 #x87 #x2D #x4C #x1C #xA6 #x8A #x09
+              #xFB #x5E #x24 #x8A #x02 #x94 #x7D #xA6
+              #x0A #x06 #x47 #x92 #x16 #x10 #xFC #x44])
+        (nonce [#xE8 #xAC #x40 #x7A #x79 #x61
+                #x55 #x3A #xB2 #xCC #xB2 #x0D])
+        (data [#xAA #x21 #x72 #x7A #x99 #x9B #xDE #x2F #x36 #x12 #x27]))
+    (should
+     (string= expected
+              (apply 'string
+                     (mapcar (lambda (x) x)
+                             (elchacha-encrypt-decrypt key nonce data)))))))
+
 (provide 'elchacha-tests)
 ;;; elchacha-tests.el ends here
