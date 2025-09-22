@@ -4,7 +4,7 @@
 
 ;; Author: Peter Badida <keyweeusr@gmail.com>
 ;; Keywords: convenience, elchacha
-;; Version: 1.0.3
+;; Version: 1.0.4
 ;; Package-Requires: ((emacs "25.1"))
 ;; Homepage: https://github.com/KeyWeeUsr/elchacha
 
@@ -47,11 +47,11 @@
     (setq chunks (reverse chunks))
     (dolist (chunk chunks)
       (push (string-to-number
-             (apply 'concat (mapcar (lambda (x) (format "%x" x))
-                                    (reverse (string-to-list chunk))))
+             (apply #'concat (mapcar (lambda (x) (format "%x" x))
+                                     (reverse (string-to-list chunk))))
              16)
             result))
-    (apply 'vector (reverse result)))
+    (apply #'vector (reverse result)))
   "ChaCha20 32-bit constants.")
 
 (defun elchacha-rotate (v n &optional size)
