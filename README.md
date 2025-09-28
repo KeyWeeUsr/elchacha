@@ -1,4 +1,6 @@
 # elchacha
+[![MELPA][melpa-badge]][melpa-package]
+[![MELPA Stable][melpa-stable-badge]][melpa-stable-package]
 [![CI][ci-badge]][ci-workflow]
 [![Coverage Status][cover-badge]][cover-link]
 [![Buy me a coffee][bmc-badge]][bmc-link]
@@ -9,7 +11,8 @@ ChaCha20 implementation in ELisp.
 
 ## How to
 
-Clone and install manually, then:
+Install it from [Melpa](https://melpa.org/#/getting-started) or clone and
+install manually, then:
 
 1. `(require 'elchacha)`
 2. `(elchacha-encrypt-decrypt key nonce data)`
@@ -22,6 +25,10 @@ it took under one second.
 While there might be performance bottlenecks in the current implementation, if
 you are looking for speed, there are better and safer implementations.
 
+[melpa-badge]: http://melpa.org/packages/elchacha-badge.svg
+[melpa-package]: http://melpa.org/#/elchacha
+[melpa-stable-badge]: http://stable.melpa.org/packages/elchacha-badge.svg
+[melpa-stable-package]: http://stable.melpa.org/#/elchacha
 [bmc-badge]: https://img.shields.io/badge/-buy_me_a%C2%A0coffee-gray?logo=buy-me-a-coffee
 [bmc-link]: https://www.buymeacoffee.com/peterbadida
 [ppl-badge]: https://img.shields.io/badge/-paypal-grey?logo=paypal
